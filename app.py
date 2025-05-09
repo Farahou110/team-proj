@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
+# from flask_cors import CORS
 from pymongo import MongoClient
 from flask_mail import Mail, Message
 from bson import ObjectId
@@ -8,14 +9,20 @@ from datetime import datetime
 import re
 import random
 import string
-
+# from pymongo.mongo_client import MongoClient
+# from pymongo.server_api import ServerApi
 
 # Flask App Initialization
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+# CORS(app)
+app.secret_key = "your_secret_key",
 
 # MongoDB Connection
 client = MongoClient("mongodb://localhost:27017/")
+# uri = "mongodb+srv://DenoManuMbogo:DenoManuMbogo@cluster0.qcqf7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# Create a new client and connect to the server
+# client = MongoClient(uri, server_api=ServerApi('1'))
+
 db = client["VISITORS"]
 visitor_collection = db["visitor"] 
 hosts_collection = db["hosts"]  
@@ -24,6 +31,16 @@ approved_collection = db["approved"]
 declined_collection = db["declined"]  
 checkout_collection = db["checkout"] 
 
+# One-time script to add test host
+@app.route("/add-test-host")
+def add_test_host():
+    hosts_collection.insert_one({
+        "username": "test_host",
+        "password": generate_password_hash("password123"),
+        "email": "host@example.com",
+        "phone": "+1234567890"
+    })
+    return "Test host added"
 
 
 
@@ -55,9 +72,23 @@ def index():
 
 @app.route("/get_hosts")
 def get_hosts():
-    hosts = list(hosts_collection.find({"username": {"$exists": True, "$ne": ""}}, {"_id": 0, "username": 1}))
-    return jsonify([host["username"] for host in hosts])  
-
+    try:
+        # Find all hosts with usernames (excluding empty usernames)
+        hosts = list(hosts_collection.find(
+            {"username": {"$exists": True, "$ne": ""}},
+            {"_id": 0, "username": 1}
+        ))
+        
+        # Debug logging
+        app.logger.debug(f"Found hosts: {hosts}")
+        
+        if not hosts:
+            return jsonify({"error": "No hosts found"}), 404
+            
+        return jsonify([host["username"] for host in hosts])
+    except Exception as e:
+        app.logger.error(f"Error fetching hosts: {str(e)}")
+        return jsonify({"error": "Server error"}), 500
 
 # Pre-register visitor
 @app.route("/prereg", methods=["GET"])

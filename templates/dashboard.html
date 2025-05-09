@@ -32,7 +32,7 @@
         .status-pending { background-color: #ffc107; color: #000; }
         .status-approved { background-color: #28a745; color: white; }
         .status-rejected, .status-declined { background-color: #dc3545; color: white; }
-        .status-exit { background-color: #6c757d; color: white; }
+        .status-checkout { background-color: #6c757d; color: white; }
         .table-responsive {
             max-height: 75vh;
             overflow-y: auto;
@@ -73,8 +73,8 @@
                class="nav-link {{ 'active' if status_filter == 'rejected' else '' }}">
                <i class="fas fa-times-circle me-2"></i> Rejected
             </a>
-            <a href="{{ url_for('dashboard', status='exit') }}" 
-               class="nav-link {{ 'active' if status_filter == 'exit' else '' }}">
+            <a href="{{ url_for('dashboard', status='checkout') }}" 
+               class="nav-link {{ 'active' if status_filter == 'checkout' else '' }}">
                <i class="fas fa-sign-out-alt me-2"></i> Checked Out
             </a>
             <div class="mt-auto p-3 text-center">
@@ -112,7 +112,7 @@
                         <tr class="{{ 'table-warning' if status_filter == 'pending' else 
                                       'table-success' if status_filter == 'approved' else 
                                       'table-danger' if status_filter == 'rejected' else 
-                                      'table-secondary' if status_filter == 'exit' }}">
+                                      'table-secondary' if status_filter == 'checkout' }}">
                             <td>
                                 <div class="d-flex align-items-center">
                                     {% if visitor.photo_url %}

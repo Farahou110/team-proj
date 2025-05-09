@@ -28,6 +28,9 @@ document.addEventListener("DOMContentLoaded", function () {
     let hostsLoaded = false;
     let cameraInitialized = false;
 
+    // Call loadHosts when page loads
+    loadHosts();
+
     // Toggle vehicle input field
     vehicleCheckbox.addEventListener("change", () => {
         vehicleInput.classList.toggle("hidden", !vehicleCheckbox.checked);
@@ -70,7 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("#checkin-form input, #checkin-form select, #checkin-form textarea")
         .forEach(input => input.addEventListener("input", validateForm));
 
-    // Fetch and populate host names with error handling
+    // Fetch and populate host names with improved error handling
     function loadHosts() {
         hostLoading.classList.remove('hidden');
         hostInput.disabled = true;
@@ -78,34 +81,58 @@ document.addEventListener("DOMContentLoaded", function () {
 
         fetch("/get_hosts")
             .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 return response.json();
             })
             .then(hosts => {
-                if (!Array.isArray(hosts) || hosts.length === 0) {
-                    throw new Error('No hosts available');
+                console.log("Received hosts:", hosts); // Debug log
+                
+                // Clear existing options
+                hostInput.innerHTML = '';
+                
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = "";
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                defaultOption.textContent = "Select your host";
+                hostInput.appendChild(defaultOption);
+                
+                // Add host options
+                if (Array.isArray(hosts) && hosts.length > 0) {
+                    hosts.forEach(host => {
+                        const option = document.createElement('option');
+                        option.value = host;
+                        option.textContent = host;
+                        hostInput.appendChild(option);
+                    });
+                    hostsLoaded = true;
+                } else {
+                    throw new Error('No hosts available or invalid data format');
                 }
-
-                hostInput.innerHTML = '<option value="" disabled selected>Select your host</option>';
-                hosts.forEach(hostName => {
-                    const option = new Option(hostName, hostName);
-                    hostInput.add(option);
-                });
-
-                hostsLoaded = true;
-                validateForm();
             })
             .catch(error => {
                 console.error("Error loading hosts:", error);
                 hostInput.innerHTML = '<option value="" disabled selected>Error loading hosts</option>';
-                alert("Could not load host list. Please try again later.");
+                
+                // Show error to user
+                const errorElement = document.createElement('div');
+                errorElement.className = 'error-message';
+                errorElement.textContent = 'Could not load host list. Please refresh the page.';
+                hostInput.parentNode.appendChild(errorElement);
+                
+                setTimeout(() => {
+                    errorElement.remove();
+                }, 5000);
             })
             .finally(() => {
                 hostLoading.classList.add('hidden');
                 hostInput.disabled = false;
+                validateForm();
             });
     }
-
 
     // Handle form submission with better error handling
     checkinForm.addEventListener("submit", async (event) => {
@@ -242,4 +269,4 @@ document.getElementById("verifyCheckinForm").addEventListener("submit", async fu
   
     const result = await response.json();
     alert(result.message);
-  });
+});
